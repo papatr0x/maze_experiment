@@ -1,7 +1,15 @@
 [project]
 name = "maze-experiment"
 version = "0.1.0"
+description = "A visualization of maze generation using randomized Depth-First Search."
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
 dependencies = [
     "arcade>=3.3.3",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.5.0",
 ]
