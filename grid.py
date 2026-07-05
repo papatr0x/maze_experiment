@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 BORDER_COLOR = arcade.color.BLACK
 VISITED_COLOR = arcade.color.WHITE
-UNVISITED_COLOR = arcade.color.GRAY
+UNVISITED_COLOR = arcade.color.BLACK
 
 
 class Border:

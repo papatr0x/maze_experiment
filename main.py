@@ -1,17 +1,20 @@
-from random import choice
 import arcade as arc
 from grid import Border, Square
+from maze import DFSGeneration
 
 # Set constants for the screen size
 SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 700
 SCREEN_TITLE = "Arcade Grid Example"
+SCREEN_BG_COLOR = arc.color.SKY_BLUE
 
 # grid config
-GRID_SIDE = 20
-SQUARE_SIDE = 30
-BORDER_WIDTH = 5
+GRID_SIDE = 40
+SQUARE_SIDE = 15
+BORDER_WIDTH = 2
 MARGIN = 50
+
+UPDATE_RATE = 0.01
 
 class MyGame(arc.Window):
     """
@@ -21,16 +24,15 @@ class MyGame(arc.Window):
         # Call the parent class and set up the window
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
-        # Set the background color
-        self.stack = None
-        self.current_square = None
-        self.end_square = None
-        self.start_square = None
+        # class fields
+        self.algorith = None
         self.all_squares = None
         self.all_borders = None
-        self.background_color = arc.color.SKY_BLUE
 
-        self.step_delay = 0.01
+        # Set the background color
+        self.background_color = SCREEN_BG_COLOR
+
+        self.step_delay = UPDATE_RATE
         # this warrants first on_update is executed
         self.time_since_last_step = self.step_delay
 
@@ -38,7 +40,6 @@ class MyGame(arc.Window):
 
     def setup(self):
         """ Set up the game and initialize the variables. """
-        self.stack = None
 
         # Create a grid of squares
         self.all_squares = []
@@ -87,15 +88,13 @@ class MyGame(arc.Window):
                 square_row.append(square)
             self.all_squares.append(square_row)
 
-        self.start_square = self.all_squares[0][0]
-        self.end_square = self.all_squares[GRID_SIDE-1][GRID_SIDE-1]
+        start_square = self.all_squares[0][0]
+        end_square = self.all_squares[GRID_SIDE-1][GRID_SIDE-1]
+        start_square.color = end_square.color = arc.color.BLUE
 
-        self.start_square.color = self.end_square.color = arc.color.BLUE
+        # instantiate generation algorithm
+        self.algorith = DFSGeneration(self.all_squares, start_square, end_square)
 
-        # Initialize traversal state
-        self.current_square = self.start_square
-        self.current_square.visited = True
-        self.stack = [self.current_square]
 
     def on_draw(self):
         """
@@ -110,9 +109,12 @@ class MyGame(arc.Window):
             for square in row:
                 square.draw()
 
+        if not self.algorith:
+            return
+
         # Highlight current square
-        if self.stack:
-            current = self.stack[-1]
+        current = self.algorith.current_square
+        if current:
             center_x = current.x + current.size / 2
             center_y = current.y + current.size / 2
             arc.draw_rect_filled(arc.XYWH(center_x, center_y, current.size * 0.8, current.size * 0.8), arc.color.GREEN)
@@ -130,49 +132,8 @@ class MyGame(arc.Window):
             return
         self.time_since_last_step -= self.step_delay
 
-        if not self.stack:
-            return
-
-        # Get current square from the top of the stack
-        current = self.stack[-1]
-
-        # Find unvisited neighbors
-        neighbors = []
-        row, col = current.row, current.col
-
-        # Directions: (d_row, d_col, border_name)
-        directions = [
-            (1, 0, 'top'),
-            (-1, 0, 'bottom'),
-            (0, -1, 'left'),
-            (0, 1, 'right')
-        ]
-
-        for dr, dc, border_name in directions:
-            nr, nc = row + dr, col + dc
-            if 0 <= nr < GRID_SIDE and 0 <= nc < GRID_SIDE:
-                neighbor = self.all_squares[nr][nc]
-                if not neighbor.visited:
-                    neighbors.append((neighbor, border_name))
-
-        if neighbors:
-            # Pick a random unvisited neighbor
-            next_square, border_name = choice(neighbors)
-
-            # Deactivate the border between current and next square
-            getattr(current.borders, border_name).active = False
-
-            # Mark next square as visited and push to stack
-            next_square.visited = True
-
-            # once end_square is reached, pop it from stack to avoid additional roads to end square
-            if next_square == self.end_square:
-                self.stack.pop()
-            else:
-                self.stack.append(next_square)
-        else:
-            # No unvisited neighbors, backtrack by popping from stack
-            self.stack.pop()
+        if self.algorith:
+            self.algorith.step()
 
     def on_key_press(self, symbol, modifiers):
         """Called whenever a key is pressed. """
