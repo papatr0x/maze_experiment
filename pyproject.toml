@@ -1,0 +1,7 @@
+[project]
+name = "maze-experiment"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "arcade>=3.3.3",
+]
