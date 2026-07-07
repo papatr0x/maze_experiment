@@ -7,7 +7,8 @@ UNVISITED_COLOR = arcade.color.BLACK
 
 BORDER_WIDTH = 2
 SQUARE_SIDE = 15
-
+GRID_SIDE = 40
+MARGIN = 50
 
 class Border:
     """

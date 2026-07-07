@@ -1,5 +1,5 @@
 import arcade as arc
-from grid import Border, Square, SQUARE_SIDE
+from grid import Border, Square, SQUARE_SIDE, GRID_SIDE, MARGIN
 from maze import DFSGeneration
 
 # Set constants for the screen size
@@ -7,10 +7,6 @@ SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 700
 SCREEN_TITLE = "Arcade Grid Example"
 SCREEN_BG_COLOR = arc.color.SKY_BLUE
-
-# grid config
-GRID_SIDE = 40
-MARGIN = 50
 
 UPDATE_RATE = 0.003
 

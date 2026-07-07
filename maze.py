@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from grid import Square
+from grid import Square, GRID_SIDE
 from random import choice
 
 
@@ -35,7 +35,6 @@ class DFSGeneration(MazeAlgorithm):
         self.stack = [start_square]
 
         self.start_square.visited = True
-        self.grid_side = len(self.squares)
 
         self.directions = [
             (1, 0, "top"),
@@ -61,7 +60,7 @@ class DFSGeneration(MazeAlgorithm):
         for dr, dc, border_name in self.directions:
             nr, nc = row + dr, col + dc
 
-            if 0 <= nr < self.grid_side and 0 <= nc < self.grid_side:
+            if 0 <= nr < GRID_SIDE and 0 <= nc < GRID_SIDE:
                 neighbor = self.squares[nr][nc]
 
                 if not neighbor.visited:
