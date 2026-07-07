@@ -1,5 +1,5 @@
 import arcade as arc
-from grid import Border, Square
+from grid import Border, Square, SQUARE_SIDE
 from maze import DFSGeneration
 
 # Set constants for the screen size
@@ -10,11 +10,9 @@ SCREEN_BG_COLOR = arc.color.SKY_BLUE
 
 # grid config
 GRID_SIDE = 40
-SQUARE_SIDE = 15
-BORDER_WIDTH = 2
 MARGIN = 50
 
-UPDATE_RATE = 0.01
+UPDATE_RATE = 0.003
 
 class MyGame(arc.Window):
     """
@@ -24,10 +22,9 @@ class MyGame(arc.Window):
         # Call the parent class and set up the window
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
-        # class fields
-        self.algorith = None
+        # grid config
+        self.algorithm = None
         self.all_squares = None
-        self.all_borders = None
 
         # Set the background color
         self.background_color = SCREEN_BG_COLOR
@@ -43,7 +40,16 @@ class MyGame(arc.Window):
 
         # Create a grid of squares
         self.all_squares = []
-        self.all_borders = []
+        
+        if Square.sprites:
+            Square.sprites.clear()
+        else:
+            Square.sprites = arc.SpriteList()
+
+        if Border.sprites:
+            Border.sprites.clear()
+        else:
+            Border.sprites = arc.SpriteList()
 
         # Create horizontal borders
         # There are (GRID_SIDE + 1) rows of horizontal borders
@@ -53,9 +59,8 @@ class MyGame(arc.Window):
             for c in range(GRID_SIDE):
                 start = (MARGIN + c * SQUARE_SIDE, MARGIN + r * SQUARE_SIDE)
                 end = (MARGIN + (c + 1) * SQUARE_SIDE, MARGIN + r * SQUARE_SIDE)
-                border = Border(start, end, BORDER_WIDTH)
+                border = Border(start, end)
                 row_borders.append(border)
-                self.all_borders.append(border)
             h_borders.append(row_borders)
 
         # Create vertical borders
@@ -66,9 +71,8 @@ class MyGame(arc.Window):
             for c in range(GRID_SIDE + 1):
                 start = (MARGIN + c * SQUARE_SIDE, MARGIN + r * SQUARE_SIDE)
                 end = (MARGIN + c * SQUARE_SIDE, MARGIN + (r + 1) * SQUARE_SIDE)
-                border = Border(start, end, BORDER_WIDTH)
+                border = Border(start, end)
                 row_borders.append(border)
-                self.all_borders.append(border)
             v_borders.append(row_borders)
 
         # Create squares and assign borders
@@ -86,6 +90,7 @@ class MyGame(arc.Window):
                     v_borders[row][col + 1]
                 )
                 square_row.append(square)
+
             self.all_squares.append(square_row)
 
         start_square = self.all_squares[0][0]
@@ -93,47 +98,46 @@ class MyGame(arc.Window):
         start_square.color = end_square.color = arc.color.BLUE
 
         # instantiate generation algorithm
-        self.algorith = DFSGeneration(self.all_squares, start_square, end_square)
+        self.algorithm = DFSGeneration(self.all_squares, start_square, end_square)
 
 
     def on_draw(self):
         """
         Render the screen.
         """
-        # This command should happen before we start drawing. It will clear
-        # the screen to the background color and erase what we drew last frame.
         self.clear()
 
-        # Draw the square fills first
-        for row in self.all_squares:
-            for square in row:
-                square.draw()
+        # Batch draw all squares and borders
+        if Square.sprites:
+            Square.sprites.draw()
 
-        if not self.algorith:
-            return
+        if self.algorithm:
+            # Highlight current square
+            current = self.algorithm.current_square
+            if current:
+                center_x = current.x + current.side_length / 2
+                center_y = current.y + current.side_length / 2
+                arc.draw_rect_filled(arc.XYWH(center_x, center_y, current.side_length * 0.8, current.side_length * 0.8), arc.color.GREEN)
 
-        # Highlight current square
-        current = self.algorith.current_square
-        if current:
-            center_x = current.x + current.size / 2
-            center_y = current.y + current.size / 2
-            arc.draw_rect_filled(arc.XYWH(center_x, center_y, current.size * 0.8, current.size * 0.8), arc.color.GREEN)
-
-        # Draw all unique borders on top
-        for border in self.all_borders:
-            border.draw()
+        if Border.sprites:
+            Border.sprites.draw()
 
     def on_update(self, delta_time: float):
         """
         Update traversal logic.
         """
         self.time_since_last_step += delta_time
-        if self.time_since_last_step < self.step_delay:
-            return
-        self.time_since_last_step -= self.step_delay
+        
+        # Process steps based on elapsed time to ensure speed even if FPS drops
+        while self.time_since_last_step >= self.step_delay:
+            self.time_since_last_step -= self.step_delay
 
-        if self.algorith:
-            self.algorith.step()
+            if self.algorithm:
+                if not self.algorithm.step():
+                    self.algorithm = None
+
+                if not self.algorithm:
+                    break
 
     def on_key_press(self, symbol, modifiers):
         """Called whenever a key is pressed. """

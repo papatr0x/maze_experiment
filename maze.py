@@ -4,7 +4,7 @@ from grid import Square
 from random import choice
 
 
-class MazeAlgorith(Protocol):
+class MazeAlgorithm(Protocol):
     """
     Common interface for maze algorithms.
     """
@@ -18,7 +18,7 @@ class MazeAlgorith(Protocol):
         """ Perform a single step of the algorithm. """
         ...
 
-class DFSGeneration(MazeAlgorith):
+class DFSGeneration(MazeAlgorithm):
     """
     Randomized DFS / recursive backtracker maze generation.
     """
@@ -35,6 +35,14 @@ class DFSGeneration(MazeAlgorith):
         self.stack = [start_square]
 
         self.start_square.visited = True
+        self.grid_side = len(self.squares)
+
+        self.directions = [
+            (1, 0, "top"),
+            (-1, 0, "bottom"),
+            (0, -1, "left"),
+            (0, 1, "right"),
+        ]
 
     @property
     def current_square(self) -> Square | None:
@@ -50,19 +58,10 @@ class DFSGeneration(MazeAlgorith):
         neighbors = []
         row, col = current.row, current.col
 
-        directions = [
-            (1, 0, "top"),
-            (-1, 0, "bottom"),
-            (0, -1, "left"),
-            (0, 1, "right"),
-        ]
-
-        grid_side = len(self.squares)
-
-        for dr, dc, border_name in directions:
+        for dr, dc, border_name in self.directions:
             nr, nc = row + dr, col + dc
 
-            if 0 <= nr < grid_side and 0 <= nc < grid_side:
+            if 0 <= nr < self.grid_side and 0 <= nc < self.grid_side:
                 neighbor = self.squares[nr][nc]
 
                 if not neighbor.visited:
@@ -71,7 +70,15 @@ class DFSGeneration(MazeAlgorith):
         if neighbors:
             next_square, border_name = choice(neighbors)
 
-            getattr(current.borders, border_name).active = False
+            # Deactivate border
+            if border_name == "top":
+                current.borders.top.active = False
+            elif border_name == "bottom":
+                current.borders.bottom.active = False
+            elif border_name == "left":
+                current.borders.left.active = False
+            elif border_name == "right":
+                current.borders.right.active = False
 
             next_square.visited = True
 
